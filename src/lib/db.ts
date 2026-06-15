@@ -4,9 +4,34 @@ import { safeFilePart } from './helpers';
 
 const LOGO_KEY = 'logo_data_url';
 
+function getSupabaseErrorMessage(error: unknown, fallback = 'Database request failed') {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+
+  if (error && typeof error === 'object') {
+    const possible = error as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      code?: unknown;
+      status?: unknown;
+    };
+
+    const parts: string[] = [];
+    if (typeof possible.message === 'string' && possible.message.trim()) parts.push(possible.message.trim());
+    if (typeof possible.details === 'string' && possible.details.trim()) parts.push(possible.details.trim());
+    if (typeof possible.hint === 'string' && possible.hint.trim()) parts.push(`Hint: ${possible.hint.trim()}`);
+    if (typeof possible.code === 'string' && possible.code.trim()) parts.push(`Code: ${possible.code.trim()}`);
+    if (typeof possible.status === 'number' || typeof possible.status === 'string') parts.push(`Status: ${possible.status}`);
+
+    if (parts.length) return parts.join(' | ');
+  }
+
+  return fallback;
+}
+
 function handleError(error: unknown, fallback = 'Database request failed') {
-  const message = error instanceof Error ? error.message : fallback;
-  throw new Error(message);
+  throw new Error(getSupabaseErrorMessage(error, fallback));
 }
 
 export async function searchRegistrants(query: string, category: Category | 'all' = 'all') {
