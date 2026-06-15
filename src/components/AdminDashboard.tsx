@@ -30,6 +30,8 @@ const emptyForm: UpsertRegistrantInput = {
   category: 'student'
 };
 
+type AdminPanel = 'list' | 'add' | 'upload' | 'notifications' | 'settings';
+
 export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   const [category, setCategory] = useState<Category>('student');
   const [rows, setRows] = useState<Registrant[]>([]);
@@ -39,7 +41,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   const [editing, setEditing] = useState<Registrant | null>(null);
   const [uploadPreview, setUploadPreview] = useState<ExcelRowPreview[]>([]);
   const [uploadMode, setUploadMode] = useState<'merge' | 'replace'>('merge');
-  const [activePanel, setActivePanel] = useState<'list' | 'add' | 'upload' | 'notifications' | 'settings'>('list');
+  const [activePanel, setActivePanel] = useState<AdminPanel>('list');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -48,12 +50,12 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   const paidCount = rows.filter((row) => row.payment_status === 'paid').length;
   const unpaidCount = rows.filter((row) => row.payment_status !== 'paid').length;
 
-  async function loadData(nextCategory = category) {
+  async function loadData(nextCategory = category, queryText = search) {
     setLoading(true);
     setError('');
     try {
       const [registrants, notes] = await Promise.all([
-        listRegistrants(nextCategory, search),
+        listRegistrants(nextCategory, queryText),
         listNotifications()
       ]);
       setRows(registrants);
@@ -66,17 +68,33 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   }
 
   useEffect(() => {
-    loadData(category);
+    loadData(category, search);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
+  function showList() {
+    setActivePanel('list');
+    setEditing(null);
+    setUploadPreview([]);
+  }
+
+  function selectCategory(nextCategory: Category) {
+    setCategory(nextCategory);
+    setSearch('');
+    setMessage('');
+    setError('');
+    setForm({ ...emptyForm, category: nextCategory, unique_code: generateCode(nextCategory) });
+    showList();
+    void loadData(nextCategory, '');
+  }
+
   async function refreshList() {
-    await loadData(category);
+    await loadData(category, search);
   }
 
   async function searchList(e: FormEvent) {
     e.preventDefault();
-    await loadData(category);
+    await loadData(category, search);
   }
 
   function startAdd() {
@@ -119,10 +137,12 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         await addRegistrant(payload);
         setMessage('Registration added successfully.');
       }
-      setForm({ ...emptyForm, category, unique_code: generateCode(category) });
+
       setEditing(null);
       setActivePanel('list');
-      await loadData(category);
+      setCategory(payload.category);
+      setForm({ ...emptyForm, category: payload.category, unique_code: generateCode(payload.category) });
+      await loadData(payload.category, '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save registration.');
     } finally {
@@ -199,7 +219,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
       setUploadPreview([]);
       setMessage(`${rowsToSave.length} record${rowsToSave.length === 1 ? '' : 's'} saved permanently to Supabase.`);
       setActivePanel('list');
-      await loadData(category);
+      await loadData(category, '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import Excel rows.');
       setMessage('');
@@ -257,8 +277,8 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
       <div className="admin-sidebar">
         <BrandHeader logo={logo} small />
         <nav>
-          <button className={category === 'student' ? 'active' : ''} onClick={() => setCategory('student')}><GraduationCap size={18} /> Students</button>
-          <button className={category === 'adult' ? 'active' : ''} onClick={() => setCategory('adult')}><Users size={18} /> Adults</button>
+          <button className={category === 'student' && activePanel === 'list' ? 'active' : ''} onClick={() => selectCategory('student')}><GraduationCap size={18} /> Students</button>
+          <button className={category === 'adult' && activePanel === 'list' ? 'active' : ''} onClick={() => selectCategory('adult')}><Users size={18} /> Adults</button>
           <button className={activePanel === 'notifications' ? 'active' : ''} onClick={() => setActivePanel('notifications')}><Bell size={18} /> Notifications {unreadCount ? <em>{unreadCount}</em> : null}</button>
           <button className={activePanel === 'settings' ? 'active' : ''} onClick={() => setActivePanel('settings')}><ImagePlus size={18} /> Logo Settings</button>
         </nav>
@@ -290,9 +310,9 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
 
         {activePanel !== 'notifications' && activePanel !== 'settings' && (
           <div className="tabs">
-            <button className={activePanel === 'list' ? 'active' : ''} onClick={() => setActivePanel('list')}>List</button>
+            <button className={activePanel === 'list' ? 'active' : ''} onClick={showList}>List</button>
             <button className={activePanel === 'add' ? 'active' : ''} onClick={startAdd}>Add / Edit</button>
-            <button className={activePanel === 'upload' ? 'active' : ''} onClick={() => setActivePanel('upload')}>Upload Excel</button>
+            <button className={activePanel === 'upload' ? 'active' : ''} onClick={() => { setEditing(null); setActivePanel('upload'); }}>Upload Excel</button>
           </div>
         )}
 
@@ -352,7 +372,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
               <label>Payment status<select value={form.payment_status} onChange={(e) => setForm({ ...form, payment_status: e.target.value as PaymentStatus })}><option value="unpaid">Unpaid</option><option value="pending">Pending</option><option value="paid">Paid</option></select></label>
               <div className="form-actions">
                 <button className="primary-button" type="submit" disabled={loading}><Save size={18} /> Save Details</button>
-                <button className="ghost-button" type="button" onClick={() => { setEditing(null); setActivePanel('list'); }}>Cancel</button>
+                <button className="ghost-button" type="button" onClick={showList}>Cancel</button>
               </div>
             </form>
           </section>
@@ -366,7 +386,15 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
               <FileSpreadsheet size={34} />
               <label className="file-button large">
                 <Upload size={18} /> Select Excel/CSV and Save
-                <input type="file" accept=".xlsx,.xls,.csv" onChange={(e: ChangeEvent<HTMLInputElement>) => e.target.files?.[0] && parseExcel(e.target.files[0])} />
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const file = e.currentTarget.files?.[0];
+                    if (file) void parseExcel(file);
+                    e.currentTarget.value = '';
+                  }}
+                />
               </label>
             </div>
             <div className="segment left">
