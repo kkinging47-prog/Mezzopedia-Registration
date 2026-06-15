@@ -161,41 +161,48 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
     }
   }
 
-  function parseExcel(file: File) {
+  async function parseExcel(file: File) {
     setError('');
-    setMessage('');
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
-        const parsed = raw.map((row, index) => parseExcelRow(row, index + 2, category)).filter((row) => row.full_name);
-        setUploadPreview(parsed);
-        setMessage(`${parsed.length} row${parsed.length === 1 ? '' : 's'} loaded from Excel. Review and import.`);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not read Excel file.');
+    setMessage('Reading file...');
+    setUploadPreview([]);
+
+    try {
+      const data = await readFileAsArrayBuffer(file);
+      const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
+      const parsed = raw
+        .map((row, index) => parseExcelRow(row, index + 2, category))
+        .filter((row) => row.full_name);
+
+      if (!parsed.length) {
+        throw new Error('No valid records were found. Please make sure the file has a name or full_name column.');
       }
-    };
-    reader.readAsArrayBuffer(file);
+
+      setUploadPreview(parsed);
+      await saveExcelRows(parsed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read or save Excel file.');
+      setMessage('');
+    }
   }
 
-  async function importExcelRows() {
-    if (!uploadPreview.length) return;
+  async function saveExcelRows(rowsToSave = uploadPreview) {
+    if (!rowsToSave.length) return;
     if (uploadMode === 'replace' && !confirm(`This will delete all ${category} records and replace them with the uploaded file. Continue?`)) return;
     setLoading(true);
     setError('');
     try {
       if (uploadMode === 'replace') await deleteRegistrantsByCategory(category);
-      await upsertRegistrants(uploadPreview.map(({ rowNumber, ...row }) => row));
+      await upsertRegistrants(rowsToSave.map(({ rowNumber, ...row }) => row));
       setUploadPreview([]);
-      setMessage('Excel records saved to database successfully.');
+      setMessage(`${rowsToSave.length} record${rowsToSave.length === 1 ? '' : 's'} saved permanently to Supabase.`);
       setActivePanel('list');
       await loadData(category);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import Excel rows.');
+      setMessage('');
     } finally {
       setLoading(false);
     }
@@ -354,11 +361,11 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         {activePanel === 'upload' && (
           <section className="admin-card">
             <h3>Upload Excel File</h3>
-            <p className="subtle">Excel columns accepted: name/full_name, phone, email, payment_status, unique_code, category. If unique_code is blank, the app will generate one.</p>
+            <p className="subtle">Excel columns accepted: name/full_name, phone, email, payment_status, unique_code, category. When you select a file, it is saved immediately to Supabase. If unique_code is blank, the app will generate one.</p>
             <div className="upload-box">
               <FileSpreadsheet size={34} />
               <label className="file-button large">
-                <Upload size={18} /> Select Excel File
+                <Upload size={18} /> Select Excel/CSV and Save
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={(e: ChangeEvent<HTMLInputElement>) => e.target.files?.[0] && parseExcel(e.target.files[0])} />
               </label>
             </div>
@@ -374,7 +381,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
                     <tbody>{uploadPreview.slice(0, 25).map((row) => <tr key={`${row.rowNumber}-${row.unique_code}`}><td>{row.rowNumber}</td><td>{row.full_name}</td><td>{row.unique_code}</td><td>{row.phone}</td><td>{row.email}</td><td>{row.payment_status}</td></tr>)}</tbody>
                   </table>
                 </div>
-                <button className="primary-button" onClick={importExcelRows} disabled={loading}><FileUp size={18} /> Import {uploadPreview.length} Records</button>
+                <button className="primary-button" onClick={() => saveExcelRows()} disabled={loading}><FileUp size={18} /> Save {uploadPreview.length} Records Again</button>
               </>
             )}
           </section>
@@ -419,6 +426,15 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
       </div>
     </section>
   );
+}
+
+function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error || new Error('Could not read file.'));
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 function parseExcelRow(row: Record<string, unknown>, rowNumber: number, fallbackCategory: Category): ExcelRowPreview {
