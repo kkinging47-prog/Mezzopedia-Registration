@@ -1,0 +1,4 @@
+full_name,phone,email,payment_status,unique_code,category
+Kofi Mensah,0240000000,kofi@example.com,paid,MZP-STU-100001,student
+Ama Boateng,0550000000,ama@example.com,unpaid,MZP-STU-100002,student
+Kwame Addo,0200000000,kwame@example.com,pending,MZP-ADT-200001,adult

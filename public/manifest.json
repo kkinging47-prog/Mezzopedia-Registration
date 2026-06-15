@@ -1,0 +1,17 @@
+{
+  "name": "MEZZOPEDIA Registration Portal",
+  "short_name": "MEZZOPEDIA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101c4c",
+  "theme_color": "#101c4c",
+  "description": "Registration lookup and admin management portal for MEZZOPEDIA National Mathematics Contest 2026.",
+  "icons": [
+    {
+      "src": "/mezzopedia-logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
