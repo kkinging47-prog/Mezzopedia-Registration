@@ -41,22 +41,18 @@ The SQL file includes a simple public-policy MVP setup so the app works immediat
 
 ## 2. Add environment variables
 
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Then fill in:
+Create a local `.env` file for local testing, or add these values directly in **Vercel → Project → Settings → Environment Variables**:
 
 ```env
 VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=admin123
+VITE_ADMIN_USERNAME=YOUR_PRIVATE_ADMIN_USERNAME
+VITE_ADMIN_PASSWORD=YOUR_PRIVATE_ADMIN_PASSWORD
 ```
 
 You can get the Supabase URL and anon key from **Supabase Dashboard → Project Settings → API**.
+
+Keep your real admin username and password private. Do not commit your live `.env` file to GitHub.
 
 ## 3. Run locally
 
@@ -88,14 +84,14 @@ The production files will be created in the `dist` folder.
 
 ## Admin login
 
-Default admin login:
+The admin login details are controlled only through your environment variables:
 
-```text
-Username: admin
-Password: admin123
+```env
+VITE_ADMIN_USERNAME=YOUR_PRIVATE_ADMIN_USERNAME
+VITE_ADMIN_PASSWORD=YOUR_PRIVATE_ADMIN_PASSWORD
 ```
 
-You can change these in `.env` or in your Vercel environment variables.
+After changing admin credentials in Vercel, redeploy the project so the new values are included in the live build.
 
 ## Excel upload format
 
@@ -116,4 +112,4 @@ A sample file is included at `sample-data/sample-upload.csv`.
 
 ## Important security note
 
-This version keeps the same simple admin login you requested (`admin` / `admin123`) and uses Supabase public policies so the static web app can work immediately. This is fine for an MVP or controlled launch, but for a public national contest, you should later upgrade the admin side to real Supabase Auth so only verified admins can edit or delete data.
+This version uses a simple frontend admin login and Supabase public policies so the static web app can work immediately. It is suitable for a quick MVP launch, but for a public national contest, upgrade the admin side to Supabase Auth or a protected backend login so only verified administrators can edit or delete records.
