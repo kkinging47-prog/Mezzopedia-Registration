@@ -123,6 +123,18 @@ export function StudentLookup({ logo, onAdmin }: Props) {
     }
   }
 
+  async function handleDownloadCard() {
+    if (!selected) return;
+    setError('');
+    try {
+      const logoUrl = logo?.startsWith('data:') ? logo : `${window.location.origin}${logo || '/mezzopedia-logo.jpg'}`;
+      await downloadRegistrationCard(selected, logoUrl);
+      setMessage('PDF registration card generated. Check your Downloads folder.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not generate PDF registration card.');
+    }
+  }
+
   function resetSearch() {
     setSelected(null);
     setEditingName(false);
@@ -137,10 +149,10 @@ export function StudentLookup({ logo, onAdmin }: Props) {
   if (selected) {
     return (
       <section className="page page--detail">
-        <button className="admin-pill" onClick={onAdmin}>Admin</button>
+        <button type="button" className="admin-pill" onClick={onAdmin}>Admin</button>
         <BrandHeader logo={logo} small />
         <div className="panel detail-panel">
-          <button className="ghost-button" onClick={resetSearch}>
+          <button type="button" className="ghost-button" onClick={resetSearch}>
             <ArrowLeft size={18} /> Search another name
           </button>
 
@@ -170,10 +182,10 @@ export function StudentLookup({ logo, onAdmin }: Props) {
           {error && <div className="notice error">{error}</div>}
 
           <div className="button-row">
-            <button className="primary-button" onClick={() => downloadRegistrationCard(selected, logo?.startsWith('data:') ? logo : `${window.location.origin}${logo || '/mezzopedia-logo.jpg'}`)}>
-              <Download size={18} /> Download Registration Card
+            <button type="button" className="primary-button" onClick={handleDownloadCard}>
+              <Download size={18} /> Download PDF Registration Card
             </button>
-            <button className="secondary-button" onClick={() => { setEditingName(true); setNewName(selected.full_name); }}>
+            <button type="button" className="secondary-button" onClick={() => { setEditingName(true); setNewName(selected.full_name); }}>
               <Edit3 size={18} /> Edit Name
             </button>
           </div>
@@ -181,8 +193,8 @@ export function StudentLookup({ logo, onAdmin }: Props) {
           {editingName && (
             <div className="inline-editor">
               <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Correct full name" />
-              <button className="primary-button compact" onClick={saveEditedName} disabled={loading}>Save</button>
-              <button className="ghost-button compact" onClick={() => setEditingName(false)}>Cancel</button>
+              <button type="button" className="primary-button compact" onClick={saveEditedName} disabled={loading}>Save</button>
+              <button type="button" className="ghost-button compact" onClick={() => setEditingName(false)}>Cancel</button>
             </div>
           )}
 
@@ -191,14 +203,14 @@ export function StudentLookup({ logo, onAdmin }: Props) {
               <h3>Have you already paid?</h3>
               <p className="subtle">Notify the admin and upload proof of payment so your status can be updated.</p>
               <div className="button-row">
-                <button className="secondary-button" onClick={notifyAdmin} disabled={loading}>
+                <button type="button" className="secondary-button" onClick={notifyAdmin} disabled={loading}>
                   <BellRing size={18} /> Notify Admin
                 </button>
                 <label className="file-button">
                   <FileUp size={18} /> Choose Proof
                   <input type="file" accept="image/*,.pdf" onChange={(e: ChangeEvent<HTMLInputElement>) => setProofFile(e.target.files?.[0] || null)} />
                 </label>
-                <button className="primary-button" disabled={!proofFile || loading} onClick={submitProof}>Upload Proof</button>
+                <button type="button" className="primary-button" disabled={!proofFile || loading} onClick={submitProof}>Upload Proof</button>
               </div>
               {proofFile && <p className="file-name">Selected: {proofFile.name}</p>}
             </div>
@@ -218,7 +230,7 @@ export function StudentLookup({ logo, onAdmin }: Props) {
 
   return (
     <section className="page">
-      <button className="admin-pill" onClick={onAdmin}>Admin</button>
+      <button type="button" className="admin-pill" onClick={onAdmin}>Admin</button>
       <BrandHeader logo={logo} />
       <div className="panel lookup-panel">
         <h2>Find Your Details</h2>
@@ -234,9 +246,9 @@ export function StudentLookup({ logo, onAdmin }: Props) {
         </div>
 
         <div className="segment">
-          <button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>All</button>
-          <button className={category === 'student' ? 'active' : ''} onClick={() => setCategory('student')}>Students</button>
-          <button className={category === 'adult' ? 'active' : ''} onClick={() => setCategory('adult')}>Adults</button>
+          <button type="button" className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>All</button>
+          <button type="button" className={category === 'student' ? 'active' : ''} onClick={() => setCategory('student')}>Students</button>
+          <button type="button" className={category === 'adult' ? 'active' : ''} onClick={() => setCategory('adult')}>Adults</button>
         </div>
 
         <p className="lookup-status">{subtitle}</p>
@@ -244,7 +256,7 @@ export function StudentLookup({ logo, onAdmin }: Props) {
 
         <div className="results-list">
           {results.map((row) => (
-            <button key={row.id} className="result-item" onClick={() => { setSelected(row); refreshSelected(row.id); }}>
+            <button type="button" key={row.id} className="result-item" onClick={() => { setSelected(row); refreshSelected(row.id); }}>
               <span>
                 <strong>{row.full_name}</strong>
                 <small>{row.category === 'student' ? 'Student' : 'Adult'} • {row.phone || row.email || 'No contact'}</small>
