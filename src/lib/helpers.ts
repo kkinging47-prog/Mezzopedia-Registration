@@ -128,7 +128,23 @@ export async function downloadRegistrationCard(registrant: Registrant, logoUrl: 
   const generated = `Generated: ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date())}`;
   doc.text(`Keep this card safely. ${generated}`, pageWidth / 2, y + 13, { align: 'center' });
 
-  doc.save(`${safeFilePart(registrant.full_name)}-${registrant.unique_code}.pdf`);
+  const filename = `${safeFilePart(registrant.full_name)}-${registrant.unique_code}.pdf`;
+  forcePdfDownload(doc, filename);
+}
+
+function forcePdfDownload(doc: jsPDF, filename: string) {
+  const pdfBuffer = doc.output('arraybuffer') as ArrayBuffer;
+  const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+  link.type = 'application/pdf';
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 function drawLabel(doc: jsPDF, x: number, y: number, label: string) {
@@ -161,6 +177,7 @@ async function getLogoDataUrl(logoUrl: string) {
     const response = await fetch(logoUrl, { cache: 'force-cache' });
     if (!response.ok) return null;
     const blob = await response.blob();
+    if (!blob.type.startsWith('image/')) return null;
     return await blobToDataUrl(blob);
   } catch {
     return null;
