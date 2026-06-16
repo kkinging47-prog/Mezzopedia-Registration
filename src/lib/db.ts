@@ -146,17 +146,18 @@ export async function uploadProof(registrant: Registrant, file: File) {
   if (uploadError) handleError(uploadError, 'Proof upload failed');
 
   const { data: publicUrl } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+  const uploadedAt = new Date().toISOString();
   const updated = await updateRegistrant(registrant.id, {
     proof_url: publicUrl.publicUrl,
     proof_filename: file.name,
-    proof_uploaded_at: new Date().toISOString()
+    proof_uploaded_at: uploadedAt
   });
 
   await addNotification({
     registrant_id: registrant.id,
     registrant_name: registrant.full_name,
     type: 'proof_uploaded',
-    message: `${registrant.full_name} uploaded proof of payment.`
+    message: `${registrant.full_name} uploaded proof of payment (${file.name}).`
   });
 
   return updated;
@@ -174,8 +175,48 @@ export async function addNotification(input: { registrant_id?: string | null; re
   if (error) handleError(error);
 }
 
+async function ensureProofUploadNotifications() {
+  const { data: proofRows, error: proofError } = await supabase
+    .from('registrants')
+    .select('id, full_name, proof_filename, proof_uploaded_at')
+    .not('proof_url', 'is', null)
+    .order('proof_uploaded_at', { ascending: false });
+
+  if (proofError) handleError(proofError, 'Could not check uploaded proofs.');
+  if (!proofRows?.length) return;
+
+  const proofRegistrantIds = proofRows.map((row) => row.id);
+  const { data: existingNotes, error: notesError } = await supabase
+    .from('admin_notifications')
+    .select('registrant_id')
+    .eq('type', 'proof_uploaded')
+    .in('registrant_id', proofRegistrantIds);
+
+  if (notesError) handleError(notesError, 'Could not check proof notifications.');
+
+  const existingIds = new Set((existingNotes || []).map((note) => note.registrant_id).filter(Boolean));
+  const missingProofs = proofRows.filter((row) => !existingIds.has(row.id));
+
+  if (!missingProofs.length) return;
+
+  const { error: insertError } = await supabase.from('admin_notifications').insert(
+    missingProofs.map((row) => ({
+      registrant_id: row.id,
+      registrant_name: row.full_name,
+      type: 'proof_uploaded',
+      message: `${row.full_name} uploaded proof of payment${row.proof_filename ? ` (${row.proof_filename})` : ''}.`,
+      is_read: false,
+      created_at: row.proof_uploaded_at || new Date().toISOString()
+    }))
+  );
+
+  if (insertError) handleError(insertError, 'Could not create missing proof notifications.');
+}
+
 export async function listNotifications() {
   assertSupabaseConfigured();
+  await ensureProofUploadNotifications();
+
   const { data, error } = await supabase
     .from('admin_notifications')
     .select('*')
