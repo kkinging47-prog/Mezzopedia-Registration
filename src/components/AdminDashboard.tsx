@@ -92,6 +92,21 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
     await loadData(category, search);
   }
 
+  async function openNotifications() {
+    setActivePanel('notifications');
+    setMessage('');
+    setError('');
+    setLoading(true);
+    try {
+      const notes = await listNotifications();
+      setNotifications(notes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load notifications.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function searchList(e: FormEvent) {
     e.preventDefault();
     await loadData(category, search);
@@ -248,9 +263,17 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   }
 
   async function readNotifications() {
-    await markAllNotificationsRead();
-    const notes = await listNotifications();
-    setNotifications(notes);
+    setLoading(true);
+    setError('');
+    try {
+      await markAllNotificationsRead();
+      const notes = await listNotifications();
+      setNotifications(notes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update notifications.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function removeNotification(id: string) {
@@ -279,7 +302,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         <nav>
           <button className={category === 'student' && activePanel === 'list' ? 'active' : ''} onClick={() => selectCategory('student')}><GraduationCap size={18} /> Students</button>
           <button className={category === 'adult' && activePanel === 'list' ? 'active' : ''} onClick={() => selectCategory('adult')}><Users size={18} /> Adults</button>
-          <button className={activePanel === 'notifications' ? 'active' : ''} onClick={() => setActivePanel('notifications')}><Bell size={18} /> Notifications {unreadCount ? <em>{unreadCount}</em> : null}</button>
+          <button className={activePanel === 'notifications' ? 'active' : ''} onClick={() => void openNotifications()}><Bell size={18} /> Notifications {unreadCount ? <em>{unreadCount}</em> : null}</button>
           <button className={activePanel === 'settings' ? 'active' : ''} onClick={() => setActivePanel('settings')}><ImagePlus size={18} /> Logo Settings</button>
         </nav>
         <button className="logout-button" onClick={onLogout}><LogOut size={18} /> Logout</button>
@@ -418,8 +441,11 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         {activePanel === 'notifications' && (
           <section className="admin-card">
             <div className="section-heading">
-              <div><h3>Notifications</h3><p className="subtle">Payment claims, proof uploads, and status updates appear here.</p></div>
-              <button className="secondary-button" onClick={readNotifications}>Mark all read</button>
+              <div><h3>Notifications</h3><p className="subtle">Payment claims, proof uploads, and status updates appear here. Click refresh if you are checking after a new proof upload.</p></div>
+              <div className="button-row align-right">
+                <button className="secondary-button" onClick={() => void openNotifications()} disabled={loading}><RefreshCw size={18} /> Refresh</button>
+                <button className="secondary-button" onClick={readNotifications} disabled={loading}>Mark all read</button>
+              </div>
             </div>
             <div className="notification-list">
               {notifications.map((note) => (
@@ -433,7 +459,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
                   <button onClick={() => removeNotification(note.id)}><Trash2 size={16} /></button>
                 </div>
               ))}
-              {!notifications.length && <p className="empty-state">No notifications yet.</p>}
+              {!notifications.length && <p className="empty-state">No notifications yet. Proof uploads also appear in the Student/Adult list under the Proof column.</p>}
             </div>
           </section>
         )}
