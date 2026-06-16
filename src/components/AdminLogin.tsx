@@ -16,8 +16,14 @@ export function AdminLogin({ logo, onBack, onSuccess }: Props) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const validUser = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
-    const validPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+    const validUser = import.meta.env.VITE_ADMIN_USERNAME;
+    const validPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+
+    if (!validUser || !validPassword) {
+      setError('Admin login is not configured. Please contact the system administrator.');
+      return;
+    }
+
     if (username.trim() === validUser && password === validPassword) {
       setError('');
       onSuccess();
@@ -35,11 +41,11 @@ export function AdminLogin({ logo, onBack, onSuccess }: Props) {
         </button>
         <div className="login-icon"><LockKeyhole size={30} /></div>
         <h2>Admin Login</h2>
-        <p className="subtle">Manage students, adults, payment status, Excel uploads, proof of payment, and notifications.</p>
+        <p className="subtle">Authorized administrators only.</p>
 
         <label>
           Username
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" autoComplete="username" />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter admin username" autoComplete="username" />
         </label>
         <label>
           Password
@@ -48,10 +54,10 @@ export function AdminLogin({ logo, onBack, onSuccess }: Props) {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="admin123"
+              placeholder="Enter admin password"
               autoComplete="current-password"
             />
-            <button type="button" onClick={() => setShowPassword((value) => !value)}>
+            <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)}>
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
