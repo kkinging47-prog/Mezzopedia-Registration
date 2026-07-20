@@ -10,6 +10,9 @@ create table if not exists public.registrants (
   email text,
   payment_status text not null default 'unpaid' check (payment_status in ('paid', 'unpaid', 'pending')),
   unique_code text not null unique,
+  password text,
+  stage text,
+  picture_url text,
   category text not null check (category in ('student', 'adult')),
   proof_url text,
   proof_filename text,
@@ -17,6 +20,11 @@ create table if not exists public.registrants (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Safe migration for projects that were created before the contest login fields were added.
+alter table public.registrants add column if not exists password text;
+alter table public.registrants add column if not exists stage text;
+alter table public.registrants add column if not exists picture_url text;
 
 create index if not exists registrants_full_name_idx on public.registrants using gin (to_tsvector('simple', full_name));
 create index if not exists registrants_category_idx on public.registrants (category);
@@ -106,9 +114,9 @@ drop policy if exists "Public update payment proofs" on storage.objects;
 create policy "Public update payment proofs" on storage.objects for update using (bucket_id = 'payment-proofs') with check (bucket_id = 'payment-proofs');
 
 -- Optional sample records. Delete these after testing if you do not need them.
-insert into public.registrants (full_name, phone, email, payment_status, unique_code, category)
+insert into public.registrants (full_name, phone, email, payment_status, unique_code, password, stage, category)
 values
-  ('Kofi Mensah', '0240000000', 'kofi@example.com', 'paid', 'MZP-STU-SAMPLE1', 'student'),
-  ('Ama Boateng', '0550000000', 'ama@example.com', 'unpaid', 'MZP-STU-SAMPLE2', 'student'),
-  ('Kwame Addo', '0200000000', 'kwame@example.com', 'pending', 'MZP-ADT-SAMPLE1', 'adult')
+  ('Kofi Mensah', '0240000000', 'kofi@example.com', 'paid', 'MZP-STU-SAMPLE1', 'samplepass1', 'Stage 1', 'student'),
+  ('Ama Boateng', '0550000000', 'ama@example.com', 'unpaid', 'MZP-STU-SAMPLE2', 'samplepass2', 'Stage 1', 'student'),
+  ('Kwame Addo', '0200000000', 'kwame@example.com', 'pending', 'MZP-ADT-SAMPLE1', 'samplepass3', 'Stage 1', 'adult')
 on conflict (unique_code) do nothing;
