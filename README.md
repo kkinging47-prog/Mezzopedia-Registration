@@ -2,14 +2,16 @@
 
 A mobile-friendly web app for **MEZZOPEDIA NATIONAL MATHEMATICS CONTEST 2026**.
 
-Students/adults can search their name, view their unique registration code and payment status, edit their name, download a registration card, notify the admin if they have paid, and upload proof of payment.
+Students/adults can search their name, view their user code, contest password, stage, payment status, picture link/photo, edit their name, download a registration card, notify the admin if they have paid, and upload proof of payment.
 
 Admins can log in, manage Students and Adults separately, upload Excel files, manually add/edit/delete records, change payment status, view proof of payment, manage notifications, and upload/change the app logo.
 
 ## Main features
 
 - Student/adult name search with multiple matching names
-- Unique registration code display
+- Contest user code display
+- Contest password and stage display
+- Google Drive/image picture link support
 - Payment status: `paid`, `unpaid`, `pending`
 - Downloadable registration card
 - Proof of payment upload to Supabase Storage
@@ -38,6 +40,22 @@ Admins can log in, manage Students and Adults separately, upload Excel files, ma
 5. Confirm the Storage bucket `payment-proofs` was created.
 
 The SQL file includes a simple public-policy MVP setup so the app works immediately from a static host. For a high-security production setup, replace the public policies with Supabase Auth and admin roles.
+
+### Existing Supabase projects
+
+If your Supabase database already existed before the contest login fields were added, run this file once in **Supabase → SQL Editor**:
+
+```text
+supabase/add-contest-login-fields.sql
+```
+
+It adds:
+
+```text
+password
+stage
+picture_url
+```
 
 ## 2. Add environment variables
 
@@ -95,21 +113,27 @@ After changing admin credentials in Vercel, redeploy the project so the new valu
 
 ## Excel upload format
 
-The app accepts `.xlsx`, `.xls`, and `.csv`. Use these column names:
+The app accepts `.xlsx`, `.xls`, and `.csv`.
+
+For the contest login sheet, use these columns:
 
 | Column | Required | Example |
 |---|---:|---|
-| full_name or name | Yes | Kofi Mensah |
-| phone | No | 0240000000 |
-| email | No | kofi@example.com |
+| name | Yes | Kofi Mensah |
+| usercode | Yes | MZP-STU-100001 |
+| password | No | abc123 |
 | payment_status | No | paid / unpaid / pending |
-| unique_code | No | MZP-STU-100001 |
-| category | No | student / adult |
+| stage | No | Stage 1 |
+| picture_url or picture | No | Google Drive image link |
 
-If `unique_code` is blank, the app generates a code automatically.
+The app also accepts older column names such as `full_name`, `unique_code`, `registration_code`, `phone`, `email`, and `category`.
+
+If `usercode`/`unique_code` is blank, the app generates a code automatically. For clean Merge & Update, always keep the same `usercode` for each contestant.
 
 A sample file is included at `sample-data/sample-upload.csv`.
 
 ## Important security note
 
 This version uses a simple frontend admin login and Supabase public policies so the static web app can work immediately. It is suitable for a quick MVP launch, but for a public national contest, upgrade the admin side to Supabase Auth or a protected backend login so only verified administrators can edit or delete records.
+
+Because the public check-registration page now displays contest passwords, consider changing the lookup flow later so students must verify by phone number, user code, or another private field before passwords are shown.
