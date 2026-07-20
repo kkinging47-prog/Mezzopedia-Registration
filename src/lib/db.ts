@@ -34,6 +34,26 @@ function handleError(error: unknown, fallback = 'Database request failed') {
   throw new Error(getSupabaseErrorMessage(error, fallback));
 }
 
+function optionalText(value: string | null | undefined) {
+  const text = value?.trim();
+  return text || null;
+}
+
+function toRegistrantPayload(row: UpsertRegistrantInput) {
+  return {
+    full_name: row.full_name.trim(),
+    phone: optionalText(row.phone),
+    email: optionalText(row.email),
+    payment_status: row.payment_status,
+    unique_code: row.unique_code.trim(),
+    password: optionalText(row.password),
+    stage: optionalText(row.stage),
+    picture_url: optionalText(row.picture_url),
+    category: row.category,
+    updated_at: new Date().toISOString()
+  };
+}
+
 export async function searchRegistrants(query: string, category: Category | 'all' = 'all') {
   assertSupabaseConfigured();
   let builder = supabase
@@ -71,7 +91,10 @@ export async function getRegistrantById(id: string) {
   return data as Registrant;
 }
 
-export async function updateRegistrant(id: string, updates: Partial<UpsertRegistrantInput> & { proof_url?: string | null; proof_filename?: string | null; proof_uploaded_at?: string | null }) {
+export async function updateRegistrant(
+  id: string,
+  updates: Partial<UpsertRegistrantInput> & { proof_url?: string | null; proof_filename?: string | null; proof_uploaded_at?: string | null }
+) {
   assertSupabaseConfigured();
   const { data, error } = await supabase
     .from('registrants')
@@ -86,15 +109,7 @@ export async function updateRegistrant(id: string, updates: Partial<UpsertRegist
 export async function upsertRegistrants(rows: UpsertRegistrantInput[]) {
   assertSupabaseConfigured();
   if (!rows.length) return [] as Registrant[];
-  const cleaned = rows.map((row) => ({
-    full_name: row.full_name.trim(),
-    phone: row.phone?.trim() || null,
-    email: row.email?.trim() || null,
-    payment_status: row.payment_status,
-    unique_code: row.unique_code.trim(),
-    category: row.category,
-    updated_at: new Date().toISOString()
-  }));
+  const cleaned = rows.map(toRegistrantPayload);
 
   const { data, error } = await supabase
     .from('registrants')
@@ -108,14 +123,7 @@ export async function addRegistrant(row: UpsertRegistrantInput) {
   assertSupabaseConfigured();
   const { data, error } = await supabase
     .from('registrants')
-    .insert({
-      full_name: row.full_name.trim(),
-      phone: row.phone?.trim() || null,
-      email: row.email?.trim() || null,
-      payment_status: row.payment_status,
-      unique_code: row.unique_code.trim(),
-      category: row.category
-    })
+    .insert(toRegistrantPayload(row))
     .select('*')
     .single();
   if (error) handleError(error);
