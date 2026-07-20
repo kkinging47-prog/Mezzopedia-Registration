@@ -1,7 +1,8 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle, ArrowLeft, BellRing, CheckCircle2, Download, Edit3,
-  FileUp, Mail, Phone, Search, ShieldCheck, UserRound
+  FileUp, Image as ImageIcon, KeyRound, Mail, Phone, Search, ShieldCheck, Trophy,
+  UserRound
 } from 'lucide-react';
 import { BrandHeader } from './BrandHeader';
 import { StatusBadge } from './StatusBadge';
@@ -147,6 +148,8 @@ export function StudentLookup({ logo, onAdmin }: Props) {
   }
 
   if (selected) {
+    const imageUrl = toGoogleDriveImageUrl(selected.picture_url);
+
     return (
       <section className="page page--detail">
         <button type="button" className="admin-pill" onClick={onAdmin}>Admin</button>
@@ -161,21 +164,36 @@ export function StudentLookup({ logo, onAdmin }: Props) {
             <div>
               <p className="eyebrow">Registration Details</p>
               <h2>{selected.full_name}</h2>
-              <p className="subtle">{selected.category === 'student' ? 'Student' : 'Adult'} category</p>
+              <p className="subtle">{selected.stage || 'Contest stage not set'} • {selected.category === 'student' ? 'Student' : 'Adult'} category</p>
             </div>
             <StatusBadge status={selected.payment_status} />
           </div>
 
+          {imageUrl && (
+            <div className="proof-card">
+              <h3><ImageIcon size={18} /> Contestant Picture</h3>
+              <img
+                src={imageUrl}
+                alt={`${selected.full_name} picture`}
+                style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 16, border: '1px solid #e2e8f0' }}
+                onError={(event) => { event.currentTarget.style.display = 'none'; }}
+              />
+              <p><a href={selected.picture_url || imageUrl} target="_blank" rel="noreferrer">Open picture link</a></p>
+            </div>
+          )}
+
           <div className="code-box">
-            <span>Your Unique Registration Code</span>
+            <span>Your Contest User Code</span>
             <strong>{selected.unique_code}</strong>
           </div>
 
           <div className="info-grid">
-            <div className="info-card"><Phone size={18} /><span>Phone</span><strong>{selected.phone || 'Not provided'}</strong></div>
-            <div className="info-card"><Mail size={18} /><span>Email</span><strong>{selected.email || 'Not provided'}</strong></div>
+            <div className="info-card"><KeyRound size={18} /><span>Password</span><strong>{selected.password || 'Not provided'}</strong></div>
+            <div className="info-card"><Trophy size={18} /><span>Stage</span><strong>{selected.stage || 'Not set'}</strong></div>
             <div className="info-card"><ShieldCheck size={18} /><span>Payment</span><strong>{selected.payment_status.toUpperCase()}</strong></div>
             <div className="info-card"><CheckCircle2 size={18} /><span>Last Updated</span><strong>{formatDate(selected.updated_at)}</strong></div>
+            <div className="info-card"><Phone size={18} /><span>Phone</span><strong>{selected.phone || 'Not provided'}</strong></div>
+            <div className="info-card"><Mail size={18} /><span>Email</span><strong>{selected.email || 'Not provided'}</strong></div>
           </div>
 
           {message && <div className="notice success">{message}</div>}
@@ -234,7 +252,7 @@ export function StudentLookup({ logo, onAdmin }: Props) {
       <BrandHeader logo={logo} />
       <div className="panel lookup-panel">
         <h2>Find Your Details</h2>
-        <p className="subtle">Search your name and select the correct result to view your registration code and payment status.</p>
+        <p className="subtle">Search your name and select the correct result to view your user code, password, stage and payment status.</p>
 
         {!isSupabaseConfigured && (
           <div className="notice error"><AlertCircle size={18} /> Supabase is not configured. Follow the README setup steps first.</div>
@@ -259,7 +277,7 @@ export function StudentLookup({ logo, onAdmin }: Props) {
             <button type="button" key={row.id} className="result-item" onClick={() => { setSelected(row); refreshSelected(row.id); }}>
               <span>
                 <strong>{row.full_name}</strong>
-                <small>{row.category === 'student' ? 'Student' : 'Adult'} • {row.phone || row.email || 'No contact'}</small>
+                <small>{row.unique_code} • {row.stage || 'Stage not set'} • {row.phone || row.email || 'No contact'}</small>
               </span>
               <StatusBadge status={row.payment_status} />
             </button>
@@ -268,4 +286,16 @@ export function StudentLookup({ logo, onAdmin }: Props) {
       </div>
     </section>
   );
+}
+
+function toGoogleDriveImageUrl(value?: string | null) {
+  if (!value) return null;
+  const text = value.trim();
+  const fileMatch = text.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+  if (fileMatch?.[1]) return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
+
+  const openMatch = text.match(/[?&]id=([^&]+)/i);
+  if (text.includes('drive.google.com') && openMatch?.[1]) return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
+
+  return text;
 }
