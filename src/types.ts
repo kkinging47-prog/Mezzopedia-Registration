@@ -8,6 +8,9 @@ export interface Registrant {
   email: string | null;
   payment_status: PaymentStatus;
   unique_code: string;
+  password: string | null;
+  stage: string | null;
+  picture_url: string | null;
   category: Category;
   proof_url: string | null;
   proof_filename: string | null;
@@ -33,6 +36,9 @@ export interface UpsertRegistrantInput {
   email?: string | null;
   payment_status: PaymentStatus;
   unique_code: string;
+  password?: string | null;
+  stage?: string | null;
+  picture_url?: string | null;
   category: Category;
 }
 
