@@ -216,9 +216,9 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
       }
 
       setUploadPreview(parsed);
-      await saveExcelRows(parsed);
+      setMessage(`${parsed.length} record${parsed.length === 1 ? '' : 's'} loaded for preview. Choose Merge & Update or Replace, then click Save to Supabase.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not read or save Excel file.');
+      setError(err instanceof Error ? err.message : 'Could not read Excel file.');
       setMessage('');
     }
   }
@@ -231,8 +231,9 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
     try {
       if (uploadMode === 'replace') await deleteRegistrantsByCategory(category);
       await upsertRegistrants(rowsToSave.map(({ rowNumber, ...row }) => row));
+      const savedMode = uploadMode === 'replace' ? 'replaced' : 'merged/updated';
       setUploadPreview([]);
-      setMessage(`${rowsToSave.length} record${rowsToSave.length === 1 ? '' : 's'} saved permanently to Supabase.`);
+      setMessage(`${rowsToSave.length} record${rowsToSave.length === 1 ? '' : 's'} ${savedMode} successfully in Supabase.`);
       setActivePanel('list');
       await loadData(category, '');
     } catch (err) {
@@ -404,11 +405,11 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         {activePanel === 'upload' && (
           <section className="admin-card">
             <h3>Upload Excel File</h3>
-            <p className="subtle">Excel columns accepted: name/full_name, phone, email, payment_status, unique_code, category. When you select a file, it is saved immediately to Supabase. If unique_code is blank, the app will generate one.</p>
+            <p className="subtle">Excel columns accepted: name/full_name, phone, email, payment_status, unique_code, category. Select a file to preview it first. Choose Merge & Update to update matching unique_code records and add new ones, or Replace to clear this category before saving.</p>
             <div className="upload-box">
               <FileSpreadsheet size={34} />
               <label className="file-button large">
-                <Upload size={18} /> Select Excel/CSV and Save
+                <Upload size={18} /> Select Excel/CSV to Preview
                 <input
                   type="file"
                   accept=".xlsx,.xls,.csv"
@@ -424,6 +425,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
               <button className={uploadMode === 'merge' ? 'active' : ''} onClick={() => setUploadMode('merge')}>Merge & Update</button>
               <button className={uploadMode === 'replace' ? 'active' : ''} onClick={() => setUploadMode('replace')}>Replace {category}</button>
             </div>
+            {uploadMode === 'replace' && <p className="subtle">Replace mode will delete all current {category} records before saving the previewed file.</p>}
             {uploadPreview.length > 0 && (
               <>
                 <div className="table-wrap small-table">
@@ -432,7 +434,9 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
                     <tbody>{uploadPreview.slice(0, 25).map((row) => <tr key={`${row.rowNumber}-${row.unique_code}`}><td>{row.rowNumber}</td><td>{row.full_name}</td><td>{row.unique_code}</td><td>{row.phone}</td><td>{row.email}</td><td>{row.payment_status}</td></tr>)}</tbody>
                   </table>
                 </div>
-                <button className="primary-button" onClick={() => saveExcelRows()} disabled={loading}><FileUp size={18} /> Save {uploadPreview.length} Records Again</button>
+                <button className="primary-button" onClick={() => saveExcelRows()} disabled={loading}>
+                  <FileUp size={18} /> {uploadMode === 'replace' ? `Replace ${category} with ${uploadPreview.length} Records` : `Merge & Update ${uploadPreview.length} Records`}
+                </button>
               </>
             )}
           </section>
