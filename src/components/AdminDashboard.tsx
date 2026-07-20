@@ -27,6 +27,9 @@ const emptyForm: UpsertRegistrantInput = {
   email: '',
   payment_status: 'unpaid',
   unique_code: '',
+  password: '',
+  stage: '',
+  picture_url: '',
   category: 'student'
 };
 
@@ -127,6 +130,9 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
       email: row.email || '',
       payment_status: row.payment_status,
       unique_code: row.unique_code,
+      password: row.password || '',
+      stage: row.stage || '',
+      picture_url: row.picture_url || '',
       category: row.category
     });
     setActivePanel('add');
@@ -283,9 +289,19 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
   }
 
   function exportCsv() {
-    const header = ['full_name', 'phone', 'email', 'payment_status', 'unique_code', 'category'];
+    const header = ['name', 'usercode', 'password', 'payment_status', 'stage', 'picture_url', 'category', 'phone', 'email'];
     const csv = [header.join(',')]
-      .concat(rows.map((row) => header.map((key) => csvValue(String((row as unknown as Record<string, unknown>)[key] ?? ''))).join(',')))
+      .concat(rows.map((row) => [
+        row.full_name,
+        row.unique_code,
+        row.password || '',
+        row.payment_status,
+        row.stage || '',
+        row.picture_url || '',
+        row.category,
+        row.phone || '',
+        row.email || ''
+      ].map((value) => csvValue(String(value))).join(',')))
       .join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -352,21 +368,23 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Code</th>
-                    <th>Contact</th>
+                    <th>User Code</th>
+                    <th>Password</th>
+                    <th>Stage</th>
                     <th>Status</th>
-                    <th>Proof</th>
+                    <th>Picture</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.id}>
-                      <td><strong>{row.full_name}</strong><small>{row.category}</small></td>
+                      <td><strong>{row.full_name}</strong><small>{row.phone || row.email || row.category}</small></td>
                       <td><code>{row.unique_code}</code></td>
-                      <td><small>{row.phone || 'No phone'}<br />{row.email || 'No email'}</small></td>
+                      <td><small>{row.password || '—'}</small></td>
+                      <td><small>{row.stage || '—'}</small></td>
                       <td><StatusBadge status={row.payment_status} /></td>
-                      <td>{row.proof_url ? <a href={row.proof_url} target="_blank" rel="noreferrer">View proof</a> : <small>None</small>}</td>
+                      <td>{row.picture_url ? <a href={row.picture_url} target="_blank" rel="noreferrer">View picture</a> : <small>None</small>}</td>
                       <td>
                         <div className="table-actions">
                           <button title="Edit" onClick={() => startEdit(row)}><Pencil size={16} /></button>
@@ -388,8 +406,11 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
           <section className="admin-card">
             <h3>{editing ? 'Edit Registration' : 'Add New Registration'}</h3>
             <form className="form-grid" onSubmit={submitForm}>
-              <label>Full name<input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required /></label>
-              <label>Unique code<input value={form.unique_code} onChange={(e) => setForm({ ...form, unique_code: e.target.value })} placeholder="Auto-generated if blank" /></label>
+              <label>Name<input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required /></label>
+              <label>User code<input value={form.unique_code} onChange={(e) => setForm({ ...form, unique_code: e.target.value })} placeholder="Auto-generated if blank" /></label>
+              <label>Password<input value={form.password || ''} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
+              <label>Stage<input value={form.stage || ''} onChange={(e) => setForm({ ...form, stage: e.target.value })} placeholder="e.g. Stage 1" /></label>
+              <label>Picture link<input value={form.picture_url || ''} onChange={(e) => setForm({ ...form, picture_url: e.target.value })} placeholder="Google Drive or image URL" /></label>
               <label>Phone<input value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
               <label>Email<input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
               <label>Category<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as Category })}><option value="student">Student</option><option value="adult">Adult</option></select></label>
@@ -405,7 +426,7 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
         {activePanel === 'upload' && (
           <section className="admin-card">
             <h3>Upload Excel File</h3>
-            <p className="subtle">Excel columns accepted: name/full_name, phone, email, payment_status, unique_code, category. Select a file to preview it first. Choose Merge & Update to update matching unique_code records and add new ones, or Replace to clear this category before saving.</p>
+            <p className="subtle">Required contest columns: name, usercode, password, payment_status, stage. You may also add picture_url or picture with the Google Drive image link. The file is previewed first and only saved after you click the final button.</p>
             <div className="upload-box">
               <FileSpreadsheet size={34} />
               <label className="file-button large">
@@ -430,8 +451,8 @@ export function AdminDashboard({ logo, onLogoChange, onLogout }: Props) {
               <>
                 <div className="table-wrap small-table">
                   <table>
-                    <thead><tr><th>Row</th><th>Name</th><th>Code</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead>
-                    <tbody>{uploadPreview.slice(0, 25).map((row) => <tr key={`${row.rowNumber}-${row.unique_code}`}><td>{row.rowNumber}</td><td>{row.full_name}</td><td>{row.unique_code}</td><td>{row.phone}</td><td>{row.email}</td><td>{row.payment_status}</td></tr>)}</tbody>
+                    <thead><tr><th>Row</th><th>Name</th><th>User Code</th><th>Password</th><th>Status</th><th>Stage</th><th>Picture</th></tr></thead>
+                    <tbody>{uploadPreview.slice(0, 25).map((row) => <tr key={`${row.rowNumber}-${row.unique_code}`}><td>{row.rowNumber}</td><td>{row.full_name}</td><td>{row.unique_code}</td><td>{row.password}</td><td>{row.payment_status}</td><td>{row.stage}</td><td>{row.picture_url ? 'Yes' : 'No'}</td></tr>)}</tbody>
                   </table>
                 </div>
                 <button className="primary-button" onClick={() => saveExcelRows()} disabled={loading}>
@@ -503,8 +524,8 @@ function parseExcelRow(row: Record<string, unknown>, rowNumber: number, fallback
   };
 
   const parsedCategory = normalizeCategory(get('category', 'type'), fallbackCategory);
-  const fullName = String(get('full_name', 'name', 'student_name', 'adult_name')).trim();
-  const uniqueCode = String(get('unique_code', 'code', 'registration_code', 'reg_code')).trim() || generateCode(parsedCategory);
+  const fullName = String(get('name', 'full_name', 'student_name', 'adult_name', 'contestant_name')).trim();
+  const userCode = String(get('usercode', 'user_code', 'unique_code', 'code', 'registration_code', 'reg_code')).trim() || generateCode(parsedCategory);
 
   return {
     rowNumber,
@@ -512,7 +533,10 @@ function parseExcelRow(row: Record<string, unknown>, rowNumber: number, fallback
     phone: String(get('phone', 'phone_number', 'mobile')).trim(),
     email: String(get('email', 'email_address')).trim(),
     payment_status: normalizeStatus(get('payment_status', 'status', 'payment')),
-    unique_code: uniqueCode,
+    unique_code: userCode,
+    password: String(get('password', 'passcode', 'login_password')).trim(),
+    stage: String(get('stage', 'contest_stage', 'round')).trim(),
+    picture_url: String(get('picture_url', 'picture', 'photo_url', 'photo', 'image_url', 'image', 'passport_photo', 'picture_link', 'photo_link', 'google_drive_link')).trim(),
     category: parsedCategory
   };
 }
