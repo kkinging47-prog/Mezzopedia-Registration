@@ -54,6 +54,28 @@ function toRegistrantPayload(row: UpsertRegistrantInput) {
   };
 }
 
+async function getExistingPaidCodes(uniqueCodes: string[]) {
+  const paidCodes = new Set<string>();
+  const cleanedCodes = Array.from(new Set(uniqueCodes.map((code) => code.trim()).filter(Boolean)));
+  const chunkSize = 500;
+
+  for (let index = 0; index < cleanedCodes.length; index += chunkSize) {
+    const codeChunk = cleanedCodes.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from('registrants')
+      .select('unique_code, payment_status')
+      .in('unique_code', codeChunk);
+
+    if (error) handleError(error, 'Could not check existing payment statuses before import.');
+
+    for (const row of (data || []) as Pick<Registrant, 'unique_code' | 'payment_status'>[]) {
+      if (row.payment_status === 'paid') paidCodes.add(row.unique_code);
+    }
+  }
+
+  return paidCodes;
+}
+
 export async function searchRegistrants(query: string, category: Category | 'all' = 'all') {
   assertSupabaseConfigured();
   let builder = supabase
@@ -109,7 +131,16 @@ export async function updateRegistrant(
 export async function upsertRegistrants(rows: UpsertRegistrantInput[]) {
   assertSupabaseConfigured();
   if (!rows.length) return [] as Registrant[];
-  const cleaned = rows.map(toRegistrantPayload);
+  let cleaned = rows.map(toRegistrantPayload);
+
+  // Excel merge uploads should never downgrade a contestant who is already marked as paid.
+  // If an existing unpaid/pending contestant appears as paid in a new sheet, the normal upsert still upgrades them to paid.
+  const existingPaidCodes = await getExistingPaidCodes(cleaned.map((row) => row.unique_code));
+  if (existingPaidCodes.size) {
+    cleaned = cleaned.map((row) => (
+      existingPaidCodes.has(row.unique_code) ? { ...row, payment_status: 'paid' as PaymentStatus } : row
+    ));
+  }
 
   const { data, error } = await supabase
     .from('registrants')
