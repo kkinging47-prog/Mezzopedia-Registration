@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Download, FileText } from 'lucide-react';
 import { AdminDashboard } from './AdminDashboard';
 import { downloadLiveFinalistsSummaryPdf } from '../lib/finalistExport';
+import '../admin-export.css';
 
 interface Props {
   logo: string | null;
