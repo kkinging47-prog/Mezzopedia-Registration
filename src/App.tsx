@@ -5,6 +5,7 @@ import { FinalistConfirmation } from './components/FinalistConfirmation';
 import { StudentLookup } from './components/StudentLookup';
 import { getAppLogo } from './lib/db';
 import { isSupabaseConfigured } from './lib/supabase';
+import './finalists.css';
 
 type View = 'lookup' | 'finalists' | 'admin-login' | 'admin';
 
