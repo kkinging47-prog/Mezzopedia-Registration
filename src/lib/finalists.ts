@@ -1,5 +1,5 @@
 import { supabase, assertSupabaseConfigured } from './supabase';
-import { LiveFinalist, LiveFinalistUpdate } from '../types';
+import { LiveFinalist, LiveFinalistAdmin, LiveFinalistUpdate } from '../types';
 
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
@@ -17,6 +17,13 @@ export async function searchLiveFinalists(query: string) {
   const { data, error } = await supabase.rpc('search_live_finalists', { p_query: searchText });
   if (error) throw new Error(errorMessage(error, 'Could not search the Live Finals list.'));
   return (data || []) as LiveFinalist[];
+}
+
+export async function listLiveFinalistsForAdmin() {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase.rpc('list_live_finalists_for_admin');
+  if (error) throw new Error(errorMessage(error, 'Could not export the Live Finals list.'));
+  return (data || []) as LiveFinalistAdmin[];
 }
 
 export async function confirmLiveFinalist(id: string, userCode: string, update: LiveFinalistUpdate) {
