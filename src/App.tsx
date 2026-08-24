@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLogin } from './components/AdminLogin';
+import { FinalistConfirmation } from './components/FinalistConfirmation';
 import { StudentLookup } from './components/StudentLookup';
 import { getAppLogo } from './lib/db';
 import { isSupabaseConfigured } from './lib/supabase';
 
-type View = 'lookup' | 'admin-login' | 'admin';
+type View = 'lookup' | 'finalists' | 'admin-login' | 'admin';
 
 export default function App() {
   const [view, setView] = useState<View>('lookup');
@@ -22,7 +23,21 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      {view === 'lookup' && <StudentLookup logo={logo} onAdmin={() => setView('admin-login')} />}
+      {view === 'lookup' && (
+        <>
+          <StudentLookup logo={logo} onAdmin={() => setView('admin-login')} />
+          <button type="button" className="finalist-floating-button" onClick={() => setView('finalists')}>
+            Live Finalists — Confirm Details
+          </button>
+        </>
+      )}
+      {view === 'finalists' && (
+        <FinalistConfirmation
+          logo={logo}
+          onBack={() => setView('lookup')}
+          onAdmin={() => setView('admin-login')}
+        />
+      )}
       {view === 'admin-login' && (
         <AdminLogin logo={logo} onBack={() => setView('lookup')} onSuccess={() => setView('admin')} />
       )}
