@@ -45,3 +45,37 @@ export interface UpsertRegistrantInput {
 export interface ExcelRowPreview extends UpsertRegistrantInput {
   rowNumber: number;
 }
+
+export type FinalistConfirmationStatus = 'pending' | 'confirmed';
+
+export interface LiveFinalist {
+  id: string;
+  full_name: string;
+  class_name: string;
+  school_name: string | null;
+  school_location: string | null;
+  region: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  travel_from: string | null;
+  companion_name: string | null;
+  companion_relationship: string | null;
+  companion_phone: string | null;
+  reporting_date: string;
+  confirmation_status: FinalistConfirmationStatus;
+  confirmed_at: string | null;
+}
+
+export interface LiveFinalistUpdate {
+  school_name: string;
+  school_location: string;
+  region: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  travel_from: string;
+  companion_name: string;
+  companion_relationship: string;
+  companion_phone: string;
+}
