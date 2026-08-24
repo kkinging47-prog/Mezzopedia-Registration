@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AdminDashboard } from './components/AdminDashboard';
+import { AdminDashboardWithExports } from './components/AdminDashboardWithExports';
 import { AdminLogin } from './components/AdminLogin';
 import { FinalistConfirmation } from './components/FinalistConfirmation';
 import { StudentLookup } from './components/StudentLookup';
@@ -43,7 +43,7 @@ export default function App() {
         <AdminLogin logo={logo} onBack={() => setView('lookup')} onSuccess={() => setView('admin')} />
       )}
       {view === 'admin' && (
-        <AdminDashboard
+        <AdminDashboardWithExports
           logo={logo}
           onLogoChange={setLogo}
           onLogout={() => setView('lookup')}
