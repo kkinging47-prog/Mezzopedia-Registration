@@ -67,6 +67,10 @@ export interface LiveFinalist {
   confirmed_at: string | null;
 }
 
+export interface LiveFinalistAdmin extends LiveFinalist {
+  unique_code: string;
+}
+
 export interface LiveFinalistUpdate {
   school_name: string;
   school_location: string;
