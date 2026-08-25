@@ -103,6 +103,7 @@
 }
 .finalist-note { margin-top: 12px; }
 .companion-section { background: #fffdf7; }
+.accommodation-section { background: #f7fbff; }
 
 .finalist-edit-card {
   border: 1px solid #dfe4f0;
@@ -133,6 +134,22 @@
 }
 .finalist-form-grid input:focus,
 .verification-card input:focus { border-color: #8292c5; box-shadow: 0 0 0 3px rgba(29,78,216,.08); }
+.checkbox-label.accommodation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #dfe4f0;
+  border-radius: 13px;
+  background: #fff8e7;
+}
+.checkbox-label.accommodation-toggle input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  padding: 0;
+}
 
 .verification-card {
   display: grid;
