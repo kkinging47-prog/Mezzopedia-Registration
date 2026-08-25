@@ -62,6 +62,8 @@ export interface LiveFinalist {
   companion_name: string | null;
   companion_relationship: string | null;
   companion_phone: string | null;
+  accommodation_required: boolean | null;
+  accommodation_note: string | null;
   reporting_date: string;
   confirmation_status: FinalistConfirmationStatus;
   confirmed_at: string | null;
@@ -82,4 +84,6 @@ export interface LiveFinalistUpdate {
   companion_name: string;
   companion_relationship: string;
   companion_phone: string;
+  accommodation_required: boolean;
+  accommodation_note: string;
 }
