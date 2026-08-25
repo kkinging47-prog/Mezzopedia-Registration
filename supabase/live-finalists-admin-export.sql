@@ -2,6 +2,9 @@
 -- Run this in the same Supabase project after live-finalists-confirmation.sql.
 -- It allows the admin dashboard to fetch the full finalist summary/contact dataset for PDF export.
 
+alter table public.live_finalists add column if not exists accommodation_required boolean not null default false;
+alter table public.live_finalists add column if not exists accommodation_note text;
+
 create or replace function public.list_live_finalists_for_admin()
 returns table (
   id uuid,
@@ -18,6 +21,8 @@ returns table (
   companion_name text,
   companion_relationship text,
   companion_phone text,
+  accommodation_required boolean,
+  accommodation_note text,
   reporting_date date,
   confirmation_status text,
   confirmed_at timestamptz
@@ -41,6 +46,8 @@ as $$
     lf.companion_name,
     lf.companion_relationship,
     lf.companion_phone,
+    lf.accommodation_required,
+    lf.accommodation_note,
     lf.reporting_date,
     lf.confirmation_status,
     lf.confirmed_at
