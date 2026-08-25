@@ -40,7 +40,9 @@ export async function confirmLiveFinalist(id: string, userCode: string, update: 
     p_travel_from: update.travel_from,
     p_companion_name: update.companion_name,
     p_companion_relationship: update.companion_relationship,
-    p_companion_phone: update.companion_phone
+    p_companion_phone: update.companion_phone,
+    p_accommodation_required: update.accommodation_required,
+    p_accommodation_note: update.accommodation_note
   });
 
   if (error) throw new Error(errorMessage(error, 'Could not confirm your Live Finals details.'));
