@@ -25,7 +25,9 @@ function formFrom(row: LiveFinalist): LiveFinalistUpdate {
     travel_from: row.travel_from || row.school_location || '',
     companion_name: row.companion_name || '',
     companion_relationship: row.companion_relationship || '',
-    companion_phone: row.companion_phone || ''
+    companion_phone: row.companion_phone || '',
+    accommodation_required: Boolean(row.accommodation_required),
+    accommodation_note: row.accommodation_note || ''
   };
 }
 
@@ -135,6 +137,7 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
 
   if (selected && form) {
     const confirmed = selected.confirmation_status === 'confirmed';
+    const needsAccommodation = Boolean(selected.accommodation_required);
     return (
       <section className="page page--detail finalist-page">
         <button type="button" className="admin-pill" onClick={onAdmin}>Admin</button>
@@ -204,6 +207,15 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
                 </div>
                 <p className="subtle finalist-note">For students, the accompanying person is pre-filled from the guardian details available in the registration records. Change it if a different person will accompany the finalist.</p>
               </div>
+
+              <div className="finalist-section accommodation-section">
+                <p className="eyebrow">Accommodation Request</p>
+                <div className="finalist-info-grid">
+                  <div className="info-card"><ShieldCheck size={18} /><span>Needs Accommodation</span><strong>{needsAccommodation ? 'Yes, accommodation needed' : 'No accommodation requested'}</strong></div>
+                  <div className="info-card"><Users size={18} /><span>Accommodation Note</span><strong>{selected.accommodation_note || 'No note provided'}</strong></div>
+                </div>
+                <p className="subtle finalist-note">Use Edit Details to request accommodation if the finalist needs Mezzo to make accommodation arrangements.</p>
+              </div>
             </>
           ) : (
             <div className="finalist-edit-card">
@@ -229,6 +241,11 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
                 <label>Coming with<input value={form.companion_name} onChange={(e) => setForm({ ...form, companion_name: e.target.value })} placeholder="Name of accompanying person" /></label>
                 <label>Relationship<input value={form.companion_relationship} onChange={(e) => setForm({ ...form, companion_relationship: e.target.value })} placeholder="Parent, guardian, teacher, spouse..." /></label>
                 <label>Companion contact<input value={form.companion_phone} onChange={(e) => setForm({ ...form, companion_phone: e.target.value })} /></label>
+                <label className="checkbox-label accommodation-toggle">
+                  <input type="checkbox" checked={form.accommodation_required} onChange={(e) => setForm({ ...form, accommodation_required: e.target.checked })} />
+                  Request accommodation from Mezzo
+                </label>
+                <label>Accommodation note<input value={form.accommodation_note} onChange={(e) => setForm({ ...form, accommodation_note: e.target.value })} placeholder="Example: finalist and mother need accommodation" /></label>
               </div>
             </div>
           )}
@@ -276,7 +293,7 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
         <button type="button" className="ghost-button" onClick={onBack}><ArrowLeft size={18} /> Back to registration lookup</button>
         <p className="eyebrow">Mezzopedia Live Finals</p>
         <h2>Confirm Your Live Finals Details</h2>
-        <p className="subtle">Search your name, check your school, region, contact and travel details, then confirm who you will be coming with.</p>
+        <p className="subtle">Search your name, check your school, region, contact, travel, accommodation and accompanying-person details.</p>
 
         <div className="search-box">
           <Search size={19} />
