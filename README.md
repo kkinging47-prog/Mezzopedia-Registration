@@ -4,9 +4,9 @@ A mobile-friendly web app for **MEZZOPEDIA NATIONAL MATHEMATICS CONTEST 2026**.
 
 Students/adults can search their name, view their user code, contest password, stage, payment status, picture link/photo, edit their name, download a registration card, notify the admin if they have paid, and upload proof of payment.
 
-The portal also has a dedicated **Live Finalists confirmation page**. Finalists search their name, review their school, region, contact and travel information, confirm who will accompany them, correct editable details, and submit a final attendance confirmation using their contest user code.
+The portal also has a dedicated **Live Finalists confirmation page**. Finalists search their name, review their school, region, contact, travel and accommodation information, confirm who will accompany them, correct editable details, and submit a final attendance confirmation using their contest user code.
 
-Admins can log in, manage Students and Adults separately, upload Excel files, manually add/edit/delete records, change payment status, view proof of payment, manage notifications, and upload/change the app logo.
+Admins can log in, manage Students and Adults separately, upload Excel files, manually add/edit/delete records, change payment status, view proof of payment, manage notifications, upload/change the app logo, and export the Live Finals summary/contact PDF.
 
 ## Main features
 
@@ -22,6 +22,8 @@ Admins can log in, manage Students and Adults separately, upload Excel files, ma
 - Excel/CSV upload with merge/update or replace mode
 - Dedicated Live Finals finalist search and confirmation page
 - Live Finals travel origin and accompanying-person details
+- Live Finals accommodation request option
+- Admin PDF export for finalist summary, contacts and accommodation requests
 - User-code verification before finalist details can be changed or confirmed
 - Confirmation audit log in Supabase
 - Fixed Live Finals reporting dates by class
@@ -41,6 +43,7 @@ Admins can log in, manage Students and Adults separately, upload Excel files, ma
 - React + TypeScript + Vite
 - Supabase database and storage
 - SheetJS `xlsx` for Excel parsing
+- jsPDF for registration cards and Live Finals PDF exports
 - Lucide React icons
 
 ## 1. Create your Supabase database
@@ -80,16 +83,24 @@ Run this file **once** in the same Supabase project used by the registration por
 supabase/live-finalists-confirmation.sql
 ```
 
-It creates:
+Then run the accommodation/export update:
+
+```text
+supabase/live-finalists-accommodation-request.sql
+```
+
+It creates and updates:
 
 - `live_finalists` — the operational record for each approved finalist
 - `live_finalist_confirmation_log` — an audit snapshot every time details are confirmed
 - `search_live_finalists(...)` — finalist name search RPC
 - `confirm_live_finalist(...)` — verified update/confirmation RPC
-- indexes for name, class, region, date and confirmation status
+- `list_live_finalists_for_admin()` — admin PDF export RPC
+- accommodation request fields: `accommodation_required` and `accommodation_note`
+- indexes for name, class, region, date, confirmation status and accommodation status
 - the approved final Live Finals list preloaded from the finalized contest data
 
-The finalist records include school, location, region, email, phone, WhatsApp, travel origin, accompanying person, relationship, accompanying-person phone, reporting date and confirmation status. Student accompanying-person fields are prefilled where guardian information was available in the registration files. Missing values can be corrected by the finalist.
+The finalist records include school, location, region, email, phone, WhatsApp, travel origin, accompanying person, relationship, accompanying-person phone, accommodation request, accommodation note, reporting date and confirmation status. Student accompanying-person fields are prefilled where guardian information was available in the registration files. Missing values can be corrected by the finalist.
 
 The seed is safe to rerun: records already confirmed by finalists are not overwritten by the seed update.
 
@@ -136,7 +147,7 @@ The production files will be created in the `dist` folder.
 3. In Vercel, add the same environment variables from `.env`.
 4. Deploy.
 
-After `supabase/live-finalists-confirmation.sql` has been run, redeploy the current `main` branch if Vercel has not automatically deployed the latest GitHub commits.
+After the Live Finals SQL files have been run, redeploy the current `main` branch if Vercel has not automatically deployed the latest GitHub commits.
 
 ## Live Finalists user flow
 
@@ -144,11 +155,12 @@ After `supabase/live-finalists-confirmation.sql` has been run, redeploy the curr
 2. The finalist sees the three class/date reporting groups.
 3. Search for the finalist's name.
 4. Select the correct result.
-5. Review class, school, school location, region, contact details, travel origin and accompanying-person details.
+5. Review class, school, school location, region, contact details, travel origin, accommodation request and accompanying-person details.
 6. Choose **Edit Details** if anything editable is wrong.
-7. Enter the contestant's existing contest user code.
-8. Choose **Confirm These Details** or **Save Changes & Confirm**.
-9. The database marks the finalist as confirmed and stores an audit snapshot.
+7. Tick **Request accommodation from Mezzo** if accommodation is needed and add a note if necessary.
+8. Enter the contestant's existing contest user code.
+9. Choose **Confirm These Details** or **Save Changes & Confirm**.
+10. The database marks the finalist as confirmed and stores an audit snapshot.
 
 Name, class and reporting date are intentionally locked on the public confirmation page. Those should be corrected by Mezzo staff rather than allowing an anonymous public edit.
 
