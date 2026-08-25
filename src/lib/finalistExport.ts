@@ -22,7 +22,6 @@ export async function downloadLiveFinalistsSummaryPdf() {
   });
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const page = () => ({ width: doc.internal.pageSize.getWidth(), height: doc.internal.pageSize.getHeight() });
   let y = 16;
 
   drawHeader(doc, 'Live Finalists Summary with Contacts');
@@ -36,6 +35,7 @@ export async function downloadLiveFinalistsSummaryPdf() {
   const total = sorted.length;
   const confirmed = sorted.filter((item) => item.confirmation_status === 'confirmed').length;
   const pending = total - confirmed;
+  const accommodationNeeded = sorted.filter((item) => item.accommodation_required).length;
   const male = sorted.filter((item) => estimateGender(item.full_name) === 'Male').length;
   const female = sorted.filter((item) => estimateGender(item.full_name) === 'Female').length;
   const unknownGender = total - male - female;
@@ -44,17 +44,48 @@ export async function downloadLiveFinalistsSummaryPdf() {
     ['Total finalists', String(total)],
     ['Confirmed', String(confirmed)],
     ['Pending', String(pending)],
+    ['Accommodation', String(accommodationNeeded)],
     ['Male / Female', `${male} / ${female}${unknownGender ? ` / ${unknownGender} unknown` : ''}`]
   ], y);
   y += 32;
 
   y = drawSummarySection(doc, 'Regional Summary', toRows(groupBy(sorted, (item) => item.region || 'Unknown')), 14, y);
-  y = drawSummarySection(doc, 'Class Summary', toRows(groupBy(sorted, (item) => item.class_name || 'Unknown'), classOrder), 105, 78);
-  y = drawSummarySection(doc, 'Recording Date Summary', toRows(groupBy(sorted, (item) => formatDateOnly(item.reporting_date))), 198, 78);
+  drawSummarySection(doc, 'Class Summary', toRows(groupBy(sorted, (item) => item.class_name || 'Unknown'), classOrder), 105, 78);
+  drawSummarySection(doc, 'Accommodation Summary', [
+    { label: 'Accommodation requested', count: accommodationNeeded },
+    { label: 'No accommodation requested', count: total - accommodationNeeded }
+  ], 198, 78);
+  drawSummarySection(doc, 'Recording Date Summary', toRows(groupBy(sorted, (item) => formatDateOnly(item.reporting_date))), 198, 112);
 
   doc.addPage('a4', 'landscape');
   drawHeader(doc, 'Main Location Summary');
   drawSimpleTable(doc, ['Location', 'Finalists'], toRows(groupBy(sorted, (item) => item.travel_from || item.school_location || 'Unknown')).map((row) => [row.label, String(row.count)]), 14, 38, [170, 35]);
+
+  doc.addPage('a4', 'landscape');
+  drawHeader(doc, 'Accommodation Requests');
+  const accommodationRows = sorted.filter((row) => row.accommodation_required);
+  drawSimpleTable(
+    doc,
+    ['Name', 'Class', 'Region / Location', 'Contact', 'Coming with', 'Accommodation note'],
+    (accommodationRows.length ? accommodationRows : sorted.filter(() => false)).map((row) => [
+      row.full_name,
+      row.class_name,
+      [row.region, row.travel_from || row.school_location].filter(Boolean).join(' / ') || '—',
+      [row.phone, row.whatsapp && row.whatsapp !== row.phone ? `WA: ${row.whatsapp}` : '', row.email].filter(Boolean).join('\n') || '—',
+      [row.companion_name, row.companion_relationship, row.companion_phone].filter(Boolean).join('\n') || '—',
+      row.accommodation_note || 'Accommodation requested'
+    ]),
+    10,
+    38,
+    [43, 22, 48, 48, 52, 70],
+    7
+  );
+  if (!accommodationRows.length) {
+    doc.setTextColor(83, 94, 113);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('No finalist has requested accommodation yet.', 14, 48);
+  }
 
   doc.addPage('a4', 'landscape');
   drawHeader(doc, 'Finalist Contact List');
@@ -64,7 +95,7 @@ export async function downloadLiveFinalistsSummaryPdf() {
 }
 
 function drawHeader(doc: jsPDF, title: string) {
-  const { width } = { width: doc.internal.pageSize.getWidth() };
+  const width = doc.internal.pageSize.getWidth();
   doc.setFillColor(16, 28, 76);
   doc.rect(0, 0, width, 25, 'F');
   doc.setTextColor(255, 255, 255);
@@ -76,10 +107,10 @@ function drawHeader(doc: jsPDF, title: string) {
 }
 
 function drawStatCards(doc: jsPDF, cards: [string, string][], y: number) {
-  const widths = [62, 50, 50, 74];
+  const widths = [52, 43, 43, 52, 60];
   let x = 14;
   cards.forEach(([label, value], index) => {
-    const w = widths[index] || 56;
+    const w = widths[index] || 50;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(223, 228, 240);
     doc.roundedRect(x, y, w, 22, 4, 4, 'FD');
@@ -90,7 +121,7 @@ function drawStatCards(doc: jsPDF, cards: [string, string][], y: number) {
     doc.setTextColor(16, 28, 76);
     doc.setFontSize(14);
     doc.text(value, x + 4, y + 17);
-    x += w + 8;
+    x += w + 6;
   });
 }
 
@@ -104,13 +135,13 @@ function drawSummarySection(doc: jsPDF, title: string, rows: SummaryRow[], x: nu
 }
 
 function drawContactPages(doc: jsPDF, rows: LiveFinalistAdmin[]) {
-  const headers = ['#', 'Name', 'Class', 'Region / Location', 'School', 'Contact', 'Coming with', 'Date', 'Status'];
-  const widths = [8, 42, 20, 42, 42, 40, 39, 24, 20];
+  const headers = ['#', 'Name', 'Class', 'Region / Location', 'School', 'Contact', 'Coming with', 'Accom.', 'Date', 'Status'];
+  const widths = [8, 38, 18, 38, 38, 36, 35, 18, 22, 20];
   let y = 36;
   const rowHeight = 18;
   const bottom = doc.internal.pageSize.getHeight() - 12;
 
-  drawTableHeader(doc, headers, widths, 10, y);
+  drawTableHeader(doc, headers, widths, 8, y);
   y += 8;
 
   rows.forEach((row, index) => {
@@ -118,18 +149,19 @@ function drawContactPages(doc: jsPDF, rows: LiveFinalistAdmin[]) {
       doc.addPage('a4', 'landscape');
       drawHeader(doc, 'Finalist Contact List');
       y = 36;
-      drawTableHeader(doc, headers, widths, 10, y);
+      drawTableHeader(doc, headers, widths, 8, y);
       y += 8;
     }
 
     const contact = [row.phone, row.whatsapp && row.whatsapp !== row.phone ? `WA: ${row.whatsapp}` : '', row.email].filter(Boolean).join('\n');
     const location = [row.region, row.travel_from || row.school_location].filter(Boolean).join('\n');
     const companion = [row.companion_name, row.companion_relationship, row.companion_phone].filter(Boolean).join('\n');
+    const accommodation = row.accommodation_required ? `Yes${row.accommodation_note ? `\n${row.accommodation_note}` : ''}` : 'No';
     const values = [
       String(index + 1), row.full_name, row.class_name, location || '—', row.school_name || 'N/A',
-      contact || '—', companion || '—', formatDateOnly(row.reporting_date), row.confirmation_status
+      contact || '—', companion || '—', accommodation, formatDateOnly(row.reporting_date), row.confirmation_status
     ];
-    drawTableRow(doc, values, widths, 10, y, rowHeight, index % 2 === 0);
+    drawTableRow(doc, values, widths, 8, y, rowHeight, index % 2 === 0);
     y += rowHeight;
   });
 }
@@ -145,8 +177,8 @@ function drawSimpleTable(doc: jsPDF, headers: string[], rows: string[][], x: num
       drawTableHeader(doc, headers, widths, x, rowY, fontSize);
       rowY += 7;
     }
-    drawTableRow(doc, row, widths, x, rowY, 7, index % 2 === 0, fontSize);
-    rowY += 7;
+    drawTableRow(doc, row, widths, x, rowY, 8, index % 2 === 0, fontSize);
+    rowY += 8;
   });
 }
 
