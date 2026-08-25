@@ -156,7 +156,9 @@ $$;
 revoke all on function public.confirm_live_finalist(uuid,text,text,text,text,text,text,text,text,text,text,text,boolean,text) from public;
 grant execute on function public.confirm_live_finalist(uuid,text,text,text,text,text,text,text,text,text,text,text,boolean,text) to anon, authenticated;
 
--- Keep the admin PDF export in sync too.
+-- Keep the admin PDF export in sync too. The return shape changes, so drop and recreate this RPC.
+drop function if exists public.list_live_finalists_for_admin();
+
 create or replace function public.list_live_finalists_for_admin()
 returns table (
   id uuid,
