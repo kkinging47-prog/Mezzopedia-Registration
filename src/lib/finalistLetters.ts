@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { LiveFinalist } from '../types';
+import { OFFICIAL_MEZZO_MATHS_LOGO, KING_EVANS_SIGNATURE } from './letterAssets';
 
 const ORG_NAME = 'Mezzo House Ltd.';
 const PROGRAM_NAME = 'MEZZOPEDIA NATIONAL MATHEMATICS CONTEST 2026';
@@ -36,17 +37,10 @@ async function downloadInvitationLetter(finalist: LiveFinalist, logoUrl: string,
   y += 12;
 
   if (type === 'school') {
-    y = drawLines(doc, [
-      'The Headteacher / Principal',
-      finalist.school_name || 'The School Head',
-      finalist.school_location || finalist.region || ''
-    ], marginX, y, 5);
+    y = drawLines(doc, ['The Headteacher / Principal', finalist.school_name || 'The School Head', finalist.school_location || finalist.region || ''], marginX, y, 5);
     y += 6;
   } else {
-    y = drawLines(doc, [
-      'The Parent / Guardian',
-      `Parent / Guardian of ${finalist.full_name}`
-    ], marginX, y, 5);
+    y = drawLines(doc, ['The Parent / Guardian', `Parent / Guardian of ${finalist.full_name}`], marginX, y, 5);
     y += 6;
   }
 
@@ -89,13 +83,13 @@ async function downloadInvitationLetter(finalist: LiveFinalist, logoUrl: string,
   if (type === 'school') {
     y = drawParagraph(doc, 'The school may nominate a teacher or representative to accompany the contestant, or may liaise with the parent/guardian to ensure the contestant arrives safely and on time.', marginX, y);
   } else {
-    y = drawParagraph(doc, 'Please ensure that the contestant arrives at the venue by 8:30am, appears neatly dressed, and comes with the contest user code or any official identification requested by Mezzo Maths. For primary and junior contestants, a responsible adult should accompany the child.', marginX, y);
+    y = drawParagraph(doc, 'Please ensure that the contestant reports on time, appears neatly dressed, and comes with the contest user code or any official identification requested by Mezzo Maths. For primary and junior contestants, a responsible adult should accompany the child.', marginX, y);
   }
 
-  y = drawParagraph(doc, `The Live Finals video recording will take place at ${VENUE_TEXT}. Reporting time is ${REPORTING_TIME}. Coordination will continue through the registered contact numbers and official Mezzo Maths channels.`, marginX, y);
+  y = drawParagraph(doc, 'The Live Finals video recording will take place at Gold Avenue School Campus, Old Ashongman - Agbogba, Accra. Reporting time is 8:30am each day.', marginX, y);
   y = drawParagraph(doc, 'We appreciate your cooperation and look forward to a successful Live Finals recording.', marginX, y);
 
-  if (y > pageHeight - 55) {
+  if (y > pageHeight - 60) {
     doc.addPage();
     await drawLetterhead(doc, logoUrl);
     y = 50;
@@ -103,7 +97,18 @@ async function downloadInvitationLetter(finalist: LiveFinalist, logoUrl: string,
 
   y += 2;
   doc.text('Yours faithfully,', marginX, y);
-  y += 16;
+  y += 4;
+  const signatureDataUrl = await getLogoDataUrl(KING_EVANS_SIGNATURE);
+  if (signatureDataUrl) {
+    try {
+      doc.addImage(signatureDataUrl, getImageFormat(signatureDataUrl), marginX, y, 34, 22);
+      y += 24;
+    } catch {
+      y += 14;
+    }
+  } else {
+    y += 14;
+  }
   doc.setDrawColor(17, 24, 39);
   doc.line(marginX, y, marginX + 64, y);
   y += 5;
@@ -123,10 +128,10 @@ async function drawLetterhead(doc: jsPDF, logoUrl: string) {
   doc.setFillColor(16, 28, 76);
   doc.rect(0, 0, pageWidth, 34, 'F');
 
-  const logoDataUrl = await getLogoDataUrl(logoUrl);
+  const logoDataUrl = await getLogoDataUrl(OFFICIAL_MEZZO_MATHS_LOGO) || await getLogoDataUrl(logoUrl);
   if (logoDataUrl) {
     try {
-      doc.addImage(logoDataUrl, getImageFormat(logoDataUrl), 16, 6, 22, 22);
+      doc.addImage(logoDataUrl, getImageFormat(logoDataUrl), 16, 5, 24, 24);
     } catch {
       // Continue without logo if the browser cannot decode the image.
     }
