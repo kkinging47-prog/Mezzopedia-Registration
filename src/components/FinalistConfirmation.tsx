@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowLeft, CalendarDays, CheckCircle2, Edit3, Mail, MapPin, Phone,
+  ArrowLeft, CalendarDays, CheckCircle2, Download, Edit3, Mail, MapPin, Phone,
   Save, School, Search, ShieldCheck, UserRound, Users, X
 } from 'lucide-react';
 import { BrandHeader } from './BrandHeader';
 import { confirmLiveFinalist, searchLiveFinalists } from '../lib/finalists';
+import { downloadGuardianInvitationLetter, downloadSchoolInvitationLetter } from '../lib/finalistLetters';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { LiveFinalist, LiveFinalistUpdate } from '../types';
 
@@ -105,6 +106,31 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
     setResults([]);
   }
 
+  function logoForPdf() {
+    if (logo?.startsWith('data:')) return logo;
+    return `${window.location.origin}${logo || '/mezzopedia-logo.jpg'}`;
+  }
+
+  async function downloadLetter(type: 'school' | 'guardian') {
+    if (!selected) return;
+    setLoading(true);
+    setError('');
+    setMessage('');
+    try {
+      if (type === 'school') {
+        await downloadSchoolInvitationLetter(selected, logoForPdf());
+        setMessage('School invitation letter downloaded successfully.');
+      } else {
+        await downloadGuardianInvitationLetter(selected, logoForPdf());
+        setMessage('Parent/guardian invitation letter downloaded successfully.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not download invitation letter.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function saveConfirmation() {
     if (!selected || !form) return;
     if (!userCode.trim()) {
@@ -168,6 +194,20 @@ export function FinalistConfirmation({ logo, onBack, onAdmin }: Props) {
             <div>
               <span>Your Live Finals reporting date</span>
               <strong>{formatReportingDate(selected.reporting_date)}</strong>
+            </div>
+          </div>
+
+          <div className="finalist-section invitation-section">
+            <p className="eyebrow">Official Invitation Letters</p>
+            <h3>Download letters for school heads and parents/guardians</h3>
+            <p className="subtle">These official PDF letters include the Mezzo Maths logo, contestant details, school, region, recording date, contacts and signature of the Administrative Manager / Mezzopedia Contest Manager.</p>
+            <div className="button-row">
+              <button type="button" className="secondary-button" onClick={() => downloadLetter('school')} disabled={loading}>
+                <Download size={18} /> Download School Invitation PDF
+              </button>
+              <button type="button" className="secondary-button" onClick={() => downloadLetter('guardian')} disabled={loading}>
+                <Download size={18} /> Download Parent / Guardian PDF
+              </button>
             </div>
           </div>
 
