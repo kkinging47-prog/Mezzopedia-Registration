@@ -94,6 +94,11 @@
   border-radius: 20px;
   background: #fbfcff;
 }
+.invitation-section {
+  background: linear-gradient(135deg, #f8fbff, #fff8e7);
+  border-color: #f1d17a;
+}
+.invitation-section h3 { margin: 4px 0 6px; color: #101c4c; }
 .compact-heading h3, .finalist-section h3, .verification-card h3, .finalist-edit-card h3 { margin: 4px 0 6px; }
 .finalist-info-grid {
   display: grid;
@@ -103,7 +108,7 @@
 }
 .finalist-note { margin-top: 12px; }
 .companion-section { background: #fffdf7; }
-.accommodation-section { background: #f7fbff; }
+.accommodation-section { background: #f8faff; }
 
 .finalist-edit-card {
   border: 1px solid #dfe4f0;
@@ -123,6 +128,18 @@
   color: #334155;
   font-weight: 800;
 }
+.checkbox-label {
+  display: flex !important;
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px !important;
+  background: #fff8e7;
+  border: 1px solid #f1d17a;
+  border-radius: 14px;
+  padding: 13px;
+}
+.checkbox-label input { width: auto !important; }
 .finalist-form-grid input,
 .verification-card input {
   width: 100%;
@@ -134,22 +151,6 @@
 }
 .finalist-form-grid input:focus,
 .verification-card input:focus { border-color: #8292c5; box-shadow: 0 0 0 3px rgba(29,78,216,.08); }
-.checkbox-label.accommodation-toggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 12px 14px;
-  border: 1px solid #dfe4f0;
-  border-radius: 13px;
-  background: #fff8e7;
-}
-.checkbox-label.accommodation-toggle input {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  padding: 0;
-}
 
 .verification-card {
   display: grid;
