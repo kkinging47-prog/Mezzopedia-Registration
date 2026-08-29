@@ -8,8 +8,8 @@ const EMAIL = 'info@mezzomaths.org';
 const WEBSITES = 'www.mezzomaths.org / mezzopedia.mezzomaths.org';
 const SIGNATORY = 'Mr. Kingsley Evans Hayford';
 const SIGNATORY_TITLE = 'Administrative Manager / Mezzopedia Contest Manager';
-const VENUE_TEXT = 'Official Live Finals video recording venue to be communicated by Mezzo Maths through the registered contacts.';
-const REPORTING_TIME = 'Reporting time to be communicated by Mezzo Maths through the registered contacts.';
+const VENUE_TEXT = 'Gold Avenue School Campus, Old Ashongman - Agbogba, Accra';
+const REPORTING_TIME = '8:30am each day';
 
 export async function downloadSchoolInvitationLetter(finalist: LiveFinalist, logoUrl: string) {
   await downloadInvitationLetter(finalist, logoUrl, 'school');
@@ -89,10 +89,10 @@ async function downloadInvitationLetter(finalist: LiveFinalist, logoUrl: string,
   if (type === 'school') {
     y = drawParagraph(doc, 'The school may nominate a teacher or representative to accompany the contestant, or may liaise with the parent/guardian to ensure the contestant arrives safely and on time.', marginX, y);
   } else {
-    y = drawParagraph(doc, 'Please ensure that the contestant arrives on time, appears neatly dressed, and comes with the contest user code or any official identification requested by Mezzo Maths. For primary and junior contestants, a responsible adult should accompany the child.', marginX, y);
+    y = drawParagraph(doc, 'Please ensure that the contestant arrives at the venue by 8:30am, appears neatly dressed, and comes with the contest user code or any official identification requested by Mezzo Maths. For primary and junior contestants, a responsible adult should accompany the child.', marginX, y);
   }
 
-  y = drawParagraph(doc, 'Further venue, reporting-time and coordination information will be communicated through the registered contact numbers and official Mezzo Maths channels.', marginX, y);
+  y = drawParagraph(doc, `The Live Finals video recording will take place at ${VENUE_TEXT}. Reporting time is ${REPORTING_TIME}. Coordination will continue through the registered contact numbers and official Mezzo Maths channels.`, marginX, y);
   y = drawParagraph(doc, 'We appreciate your cooperation and look forward to a successful Live Finals recording.', marginX, y);
 
   if (y > pageHeight - 55) {
@@ -160,7 +160,7 @@ function drawDetailTable(doc: jsPDF, finalist: LiveFinalist, x: number, y: numbe
     ['Email', finalist.email || 'Not provided'],
     ['Travelling From', finalist.travel_from || finalist.school_location || 'Not provided'],
     ['Accompanying Person', finalist.companion_name || 'To be confirmed'],
-    ['Accommodation Request', finalist.accommodation_required ? `Yes${finalist.accommodation_note ? ` — ${finalist.accommodation_note}` : ''}` : 'No request submitted']
+    ['Accommodation Request', finalist.accommodation_required ? `Yes${finalist.accommodation_note ? ` - ${finalist.accommodation_note}` : ''}` : 'No request submitted']
   ];
 
   const labelW = 48;
@@ -180,7 +180,7 @@ function drawDetailTable(doc: jsPDF, finalist: LiveFinalist, x: number, y: numbe
     doc.text(label, x + 3, y + 5.3);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(17, 24, 39);
-    doc.text(doc.splitTextToSize(value || '—', valueW - 6).slice(0, 2), x + labelW + 3, y + 5.3);
+    doc.text(doc.splitTextToSize(value || '-', valueW - 6).slice(0, 2), x + labelW + 3, y + 5.3);
     y += h;
   });
 
